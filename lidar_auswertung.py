@@ -11,7 +11,9 @@ from geometry_msgs.msg import Pose
 from sensor_msgs.msg import PointCloud2
 from tf.transformations import euler_from_quaternion #Zur Umwandlung des Kurses (Heading)
 import sensor_msgs.point_cloud2 as pc2
+import numpy as np
 import pcl
+from sklearn.cluster import DBSCAN
 
 
 #Speicherklassen fuer Objekte
@@ -61,7 +63,7 @@ class Lidar ():
         else:
             self.counter+=1
 
-    def callback_lidar (self,cloud_msg): 
+    def callback_lidar (self,cloud_msg): #Copied from ChatGPT, to be veryfied
         # Convert the PointCloud2 message to a PCL PointXYZRGB point cloud
         cloud = pcl.PointCloud_PointXYZRGB()
         pcl.io.pointCloud2.read_points(cloud_msg, cloud)
@@ -76,6 +78,18 @@ class Lidar ():
         outlier_filter.set_mean_k(50)
         outlier_filter.set_std_dev_mul_thresh(1.0)
         cloud = outlier_filter.filter()
+
+        # Convert the PCL point cloud to a numpy array
+        points = np.asarray(cloud)
+    
+        # Cluster the points using DBSCAN
+        dbscan = DBSCAN(eps=0.3, min_samples=10)
+        dbscan.fit(points)
+        labels = dbscan.labels_
+    
+        # Print the number of clusters
+        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+        print("Number of clusters:", n_clusters)
 
         
 
